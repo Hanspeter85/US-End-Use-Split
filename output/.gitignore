@@ -1,1 +1,5 @@
 # Ingnore output files to avoid push to remote repo 
+
+*
+*/
+!.gitignore
