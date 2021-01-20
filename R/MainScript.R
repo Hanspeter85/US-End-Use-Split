@@ -32,7 +32,7 @@ raw[["Y"]] <- raw$U[ 5:(5+400), 429]  # Domestic final demand
 Z <- raw$Z[ 3:403, 3:403]
 Z <- apply(Z,c(1,2),as.numeric)
 
-# Set NA to zero and convert Y & IM to numeric 
+# Set NA to zero and convert Y to numeric 
 Y <- raw$Y
 Y[is.na(Y)] <- 0
 Y <- as.numeric(Y)
@@ -46,7 +46,7 @@ sum(Z)
 # Estimate gross production
 x <- rowSums(Z) + Y
 
-# Calculate input technology matrix
+# Calculate technology matrix
 A <- t( t(Z)/x )
 
 # Remove col and rownames
