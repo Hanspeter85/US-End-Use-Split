@@ -26,7 +26,6 @@ time <- gsub(":","-",time)
 raw <- list()
 raw[["Z"]] <- read.xlsx(xlsxFile = paste0(path$input, file$Z) , sheet = 1)  # Transaction matrix
 raw[["U"]] <- read.xlsx(xlsxFile = paste0(path$input, file$Use) , sheet = 3)  # Use table
-raw[["IM"]] <- raw$U[ 5:(5+400), 416]  # Final demand imports
 raw[["Y"]] <- raw$U[ 5:(5+400), 429]  # Domestic final demand
 
 # Clean Z tables and convert to numeric
@@ -37,15 +36,6 @@ Z <- apply(Z,c(1,2),as.numeric)
 Y <- raw$Y
 Y[is.na(Y)] <- 0
 Y <- as.numeric(Y)
-
-# IM <- raw$IM
-# IM[is.na(IM)] <- 0
-# IM <- as.numeric(IM)
-
-# Estimate final demand for domestic products
-# Y <- Y - IM
-
-# remove(IM)
 
 Y[Y < 0]  # Negatives in final demand
 
@@ -62,12 +52,15 @@ A <- t( t(Z)/x )
 # Remove col and rownames
 rownames(A) <- colnames(A) <- NULL
 
-# Check sum if and if all positive numeric
+# Check sum and if all positive numeric
 sum(A)
 min(A)
 
-# Load settings for creating filter matrix
+# Load settings for present run
 tmp <- read.xlsx(xlsxFile = paste0( path$input, file$Filter), sheet = 1 )
+
+# Read name of material
+material <- colnames(tmp)[2]
 
 # Clean filter and add column names
 filter <- tmp[2:402, 3:4 ]
@@ -88,7 +81,7 @@ A_new <- t( t(A_new) * filter$product )
 
 # Add labels and write filtered technology matrix to file
 colnames(A_new) <- rownames(A_new) <- IO.code
-write.xlsx( x = A_new, file = paste0( path$output, time, " A_new.xlsx"), row.names = TRUE )
+write.xlsx( x = A_new, file = paste0( path$output, time," ",material, " A_new.xlsx"), row.names = TRUE )
 
 # Estimate new Leontief inverse and new gross production vector
 I <- diag( rep(1,401) )
@@ -112,6 +105,20 @@ Material2EndUse <- Material2EndUse %*% EndUse
 
 # Estimate shares and round to 2 digits
 Shares <- round( Material2EndUse / sum(Material2EndUse), digits = 2 )
+rownames(Shares) <- material
 
 # Write result to files
-write.xlsx( x = Shares, file = paste0( path$output, time, " End-Use-Shares.xlsx"), row.names = TRUE )
+write.xlsx( x = Shares, file = paste0( path$output, time," ",material, " End-Use-Shares",".xlsx"), row.names = TRUE )
+
+# Make copy of present settings file and rename accordingly
+file.copy(from = paste0(path$input, "Filter_settings.xlsx"), 
+          to = path$output )
+
+file.rename(from = file.path(path$output, "Filter_settings.xlsx"), 
+            to = file.path(path$output, paste0(time, " ", material, " Filter_settings.xlsx") ))
+
+
+# FIN
+
+
+
